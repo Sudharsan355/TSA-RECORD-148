@@ -1,0 +1,56 @@
+pip install yfinance statsmodels
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+df=yf.download("TCS.NS",start='2010-01-01',end='2025-01-01')
+monthly_data=df['Close'].resample('ME').mean()
+plt.figure(figsize=(12,6))
+plt.plot(monthly_data,label='Monthly Aggregated Stock Price',color='red')
+plt.title('Monthly Trends of TCS Stock Price')
+plt.xlabel('Date')
+plt.ylabel('Stock Price (USD)')
+plt.legend()
+plt.show()
+plt.figure(figsize=(12, 6))
+# Plot daily closing prices (before aggregation)
+plt.plot(df['Close'], label='Daily Closing Price', alpha=0.6, color='blue')
+
+# Plot monthly aggregated closing prices (after aggregation)
+plt.plot(monthly_data, label='Monthly Aggregated Closing Price', color='red', linewidth=2)
+
+plt.title('TCS Stock: Daily vs Monthly Aggregated Closing Prices')
+plt.xlabel('Date')
+plt.ylabel('Closing Price (USD)')
+plt.legend()
+plt.show()
+
+# Applying a moving average with a window size of 30 days
+window_size = 30
+monthly_data_sma = monthly_data.rolling(window=window_size).mean()
+
+# Plotting the original and smoothed data
+plt.figure(figsize=(10, 6))
+plt.plot(monthly_data, label='Monthly Average Closing Price', alpha=0.6)
+plt.plot(monthly_data_sma, label=f'Smoothed (SMA-{window_size})', color='red', linewidth=2)
+plt.title(f'TCS Monthly Closing Price and {window_size}-day Moving Average')
+plt.xlabel('Date')
+plt.ylabel('Closing Price (USD)')
+plt.legend()
+plt.show()
+
+model = ExponentialSmoothing(monthly_data, trend='add', seasonal=None, damped_trend=False)
+fit_model = model.fit()
+
+# Forecast smoothed values
+monthly_data_smooth = fit_model.fittedvalues
+
+# Plotting the original and smoothed data
+plt.figure(figsize=(10, 6))
+plt.plot(monthly_data, label='Monthly Average Closing Price',color='red', alpha=0.6)
+plt.plot(monthly_data_smooth, label='Exponential Smoothing', color='green', linewidth=2)
+plt.title('TCS Monthly Closing Price with Exponential Smoothing')
+plt.xlabel('Date')
+plt.ylabel('Closing Price (USD)')
+plt.legend()
+plt.show()

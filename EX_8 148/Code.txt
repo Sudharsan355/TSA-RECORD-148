@@ -1,0 +1,44 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from sklearn.metrics import mean_squared_error
+import statsmodels.api as sm
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+import pandas as pd
+df_tsla = pd.read_csv('/content/TSLA.csv')
+print(df_tsla.head())
+df_tsla['Date'] = pd.to_datetime(df_tsla['Date'])
+df_tsla.set_index('Date', inplace=True)
+tsla_ts = df_tsla['Close']
+def adf_test(series):
+    result = adfuller(series.dropna())
+    print(f'ADF Statistic: {result[0]}')
+    print(f'p-value: {result[1]}')
+    print('Critical Values:', result[4])
+    if result[1] > 0.05:
+        print("Time series is NOT stationary.")
+    else:
+        print("Time series is stationary.")
+
+print("\n=== ADF Test Before Differencing (Tesla) ===")
+adf_test(tsla_ts)
+tsla_diff = tsla_ts.diff().dropna()
+
+print("\n=== ADF Test After First Differencing (Tesla) ===")
+adf_test(tsla_diff)
+plt.figure(figsize=(12, 6))
+plt.subplot(121)
+plot_acf(tsla_diff, lags=40, ax=plt.gca())
+plt.title("Autocorrelation Function (ACF)")
+plt.subplot(122)
+plot_pacf(tsla_diff, lags=40, ax=plt.gca())
+plt.title("Partial Autocorrelation Function (PACF)")
+plt.tight_layout()
+plt.show()
+arima_model = sm.tsa.ARIMA(tsla_ts, order=(1,1,1))  # (p,d,q)
+arima_result = arima_model.fit()
+df_tsla['Forecast'] = arima_result.predict(start=len(tsla_ts)-30, end=len(tsla_ts)+30, dynamic=True)
+df_tsla[['Close', 'Forecast']].plot(figsize=(12,6), title="ARIMA Forecast for Tesla Stock Price")
+plt.show()

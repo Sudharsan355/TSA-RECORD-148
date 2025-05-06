@@ -1,0 +1,78 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+# Step 1: Generate sample time series data (trend + seasonality + noise)
+dates = pd.date_range(start='2020-01-01', periods=365, freq='D')
+trend = 0.05 * np.arange(365)  # Linear trend
+seasonality = 10 * np.sin(2 * np.pi * np.arange(365) / 30)  # Monthly seasonality (approx. 30-day cycle)
+noise = np.random.normal(0, 2, 365)  # Random noise
+data = pd.DataFrame({
+    'Date': dates,
+    'Value': trend + seasonality + noise
+})
+data.set_index('Date', inplace=True)
+
+# Step 2: Check for missing values (optional preprocessing)
+data = data.interpolate()  # Interpolate if any NaN values exist
+
+# Step 3: Perform seasonal decomposition (additive model)
+period = 30  # Define the seasonal period (e.g., 30 days for monthly seasonality)
+decomposition = seasonal_decompose(data['Value'], model='additive', period=period)
+
+# Step 4: Extract components
+trend = decomposition.trend
+seasonal = decomposition.seasonal
+residual = decomposition.resid
+
+# Step 5: Visualize the decomposition with area plots
+plt.figure(figsize=(12, 10))
+
+# Original Data (Area plot)
+plt.subplot(4, 1, 1)
+plt.fill_between(data.index, data['Value'], color='lightblue', alpha=0.6)
+plt.plot(data.index, data['Value'], label='Original Data', color='blue', linewidth=2)
+plt.title('Original Time Series', fontsize=14)
+plt.xlabel('Date')
+plt.ylabel('Value')
+plt.legend(loc='upper left')
+plt.grid(True, linestyle='--', alpha=0.7)
+
+# Trend Component (Area plot)
+plt.subplot(4, 1, 2)
+plt.fill_between(data.index, trend, color='lightgreen', alpha=0.6)
+plt.plot(data.index, trend, label='Trend', color='green', linewidth=2)
+plt.title('Trend Component', fontsize=14)
+plt.xlabel('Date')
+plt.ylabel('Trend Value')
+plt.legend(loc='upper left')
+plt.grid(True, linestyle='--', alpha=0.7)
+
+# Seasonal Component (Area plot)
+plt.subplot(4, 1, 3)
+plt.fill_between(data.index, seasonal, color='lightcoral', alpha=0.6)
+plt.plot(data.index, seasonal, label='Seasonality', color='red', linewidth=2)
+plt.title('Seasonal Component', fontsize=14)
+plt.xlabel('Date')
+plt.ylabel('Seasonal Value')
+plt.legend(loc='upper left')
+plt.grid(True, linestyle='--', alpha=0.7)
+
+# Residual Component (Area plot)
+plt.subplot(4, 1, 4)
+plt.fill_between(data.index, residual, color='lightgray', alpha=0.6)
+plt.plot(data.index, residual, label='Residual', color='black', linewidth=2)
+plt.title('Residual Component', fontsize=14)
+plt.xlabel('Date')
+plt.ylabel('Residual Value')
+plt.legend(loc='upper left')
+plt.grid(True, linestyle='--', alpha=0.7)
+
+plt.tight_layout()
+plt.show()
+
+# Step 6: Basic analysis
+print("Decomposition Summary:")
+print(f"Trend range: {trend.min():.2f} to {trend.max():.2f}")
+print(f"Seasonal amplitude (max - min): {(seasonal.max() - seasonal.min()):.2f}")
